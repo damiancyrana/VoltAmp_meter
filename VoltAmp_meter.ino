@@ -10,8 +10,10 @@
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 Adafruit_SH1106G display = Adafruit_SH1106G(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
-int voltage_divider_measurement_pin = 0;
+int voltage_divider_measurement_pin = A1;
 float arduino_voltage = 5.105; // volatege beetwen 5V and GND on the Arduino board
+
+int analogPin = A0; // Current sensor output
 
 void setup()
 {
@@ -24,13 +26,20 @@ void loop()
 {
     display.clearDisplay();
     display.setTextColor(SH110X_WHITE);
-    display.setTextSize(2);
+    display.setTextSize(1);
 
-    display.setCursor(0, 24);
-    display.println("Vout =");
+    display.setCursor(0, 0);
+    display.println("V =");
 
-    display.setCursor(80, 24);
+    display.setCursor(60, 0);
     display.println(get_voltage());
+
+    display.setCursor(0, 32);
+    display.println("A =");
+
+    display.setCursor(60, 32);
+    display.println(get_current());
+
     display.display();
     delay(100);
 }
@@ -47,4 +56,26 @@ float get_voltage()
     vout = (get_volatege_value * arduino_voltage) / 1024.0;
     measured_voltage = vout / (R2 / (R1 + R2));
     return measured_voltage;
+}
+
+float get_current()
+{
+    const int averageValue = 510;
+    long int sensorValue = 0; // variable to store the sensor value read
+
+    float voltage = 0;
+    float measured_current = 0;
+
+    for (int i = 0; i < averageValue; i++)
+    {
+        sensorValue += analogRead(analogPin);
+
+        // wait 2 milliseconds before the next loop
+        delay(2);
+    }
+
+    sensorValue = sensorValue / averageValue;
+    voltage = sensorValue * 5.093 / 1024.0;
+    measured_current = (voltage - 2.54) / 0.100;
+    return measured_current;
 }
